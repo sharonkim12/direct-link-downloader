@@ -16,7 +16,7 @@
     .ad-title { font-size: 12px; color: #777; margin-bottom: 8px; }
   </style>
 
-  <!-- ✅ Vignette(팝/인터스티셜) 스크립트는 1번만 -->
+  <!-- Vignette (pop/interstitial) -->
   <script async src="https://gizokraijaw.net/vignette.min.js" data-zone="10360161"></script>
 </head>
 
@@ -30,19 +30,41 @@
     <div id="out" style="margin-top:12px;"></div>
   </div>
 
-  <!-- ✅ Ads 박스는 유지하되, vignette는 여기에 표시형 배너가 안 뜰 수 있음 -->
   <div class="ad-slot">
     <div class="ad-title">Ads</div>
     <div class="muted">
-      If you enabled a vignette/pop format, it may not render a banner here.
-      It usually triggers on clicks/navigation.
+      Vignette/pop may not render a banner here. It usually triggers on clicks/navigation.
     </div>
   </div>
 
   <script>
     const out = document.getElementById("out");
-    document.getElementById("go").onclick = async () => {
-      const url = document.getElementById("url").value.trim();
+    const goBtn = document.getElementById("go");
+    const urlInput = document.getElementById("url");
+
+    function renderDownloadUI(data) {
+      out.innerHTML = `
+        <div><b>Looks downloadable.</b></div>
+        <div class="muted">Type: ${data.contentType || "unknown"} | Size: ${data.contentLength || "unknown"}</div>
+        <div style="margin-top:10px;">
+          <button id="dlBtn">Download</button>
+        </div>
+      `;
+
+      const btn = document.getElementById("dlBtn");
+      btn.addEventListener("click", () => {
+        // 팝/인터스티셜 트리거 (네트워크 정책에 따라 동작이 달라질 수 있음)
+        window.open("about:blank", "_blank");
+
+        // 실제 다운로드 이동
+        setTimeout(() => {
+          window.location.href = data.directUrl;
+        }, 800);
+      });
+    }
+
+    goBtn.addEventListener("click", async () => {
+      const url = urlInput.value.trim();
       out.textContent = "";
       if (!url) { out.textContent = "Enter a URL."; return; }
 
@@ -53,7 +75,8 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url })
         });
-        const data = await r.json();
+
+        const data = await r.json().catch(() => ({}));
 
         if (!r.ok) {
           out.innerHTML = `<b>Error:</b> ${data.error || "Unknown error"}`;
@@ -61,23 +84,15 @@
         }
 
         if (!data.ok) {
-          out.innerHTML = `<b>Not downloadable:</b> ${data.reason}`;
+          out.innerHTML = `<b>Not downloadable:</b> ${data.reason || "Not allowed"}`;
           return;
         }
 
-        out.innerHTML = `
-          <div><b>Looks downloadable.</b></div>
-          <div class="muted">Type: ${data.contentType || "unknown"} | Size: ${data.contentLength || "unknown"}</div>
-          <div style="margin-top:10px;">
-            <a href="${data.directUrl}" target="_blank" rel="noopener">
-              <button>Download</button>
-            </a>
-          </div>
-        `;
+        renderDownloadUI(data);
       } catch (e) {
         out.innerHTML = `<b>Error:</b> ${e.message}`;
       }
-    };
+    });
   </script>
 </body>
 </html>
