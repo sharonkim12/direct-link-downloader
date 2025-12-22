@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Direct Link Downloader</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 860px; margin: 40px auto; padding: 0 16px; }
+    h1 { font-size: 28px; margin-bottom: 10px; }
+    input { width: 100%; padding: 12px; font-size: 16px; }
+    button { padding: 12px 16px; font-size: 16px; margin-top: 10px; cursor: pointer; }
+    .box { margin-top: 18px; padding: 14px; border: 1px solid #ddd; border-radius: 10px; }
+    .muted { color: #666; font-size: 13px; }
+    a { word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>Direct Link Downloader</h1>
+  <div class="muted">Paste a direct file URL (mp4, zip, pdf, etc.). YouTube is not supported.</div>
+
+  <div class="box">
+    <input id="url" placeholder="https://example.com/file.mp4" />
+    <button id="go">Analyze</button>
+    <div id="out" style="margin-top:12px;"></div>
+  </div>
+
+  <div class="box muted">Ad slot (add later)</div>
+
+  <script>
+    const out = document.getElementById("out");
+    document.getElementById("go").onclick = async () => {
+      const url = document.getElementById("url").value.trim();
+      out.textContent = "";
+      if (!url) { out.textContent = "Enter a URL."; return; }
+
+      out.textContent = "Checking...";
+      try {
+        const r = await fetch("/api/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url })
+        });
+        const data = await r.json();
+
+        if (!r.ok) {
+          out.innerHTML = `<b>Error:</b> ${data.error || "Unknown error"}`;
+          return;
+        }
+
+        if (!data.ok) {
+          out.innerHTML = `<b>Not downloadable:</b> ${data.reason}`;
+          return;
+        }
+
+        out.innerHTML = `
+          <div><b>Looks downloadable.</b></div>
+          <div class="muted">Type: ${data.contentType || "unknown"} | Size: ${data.contentLength || "unknown"}</div>
+          <div style="margin-top:10px;">
+            <a href="${data.directUrl}" target="_blank" rel="noopener">
+              <button>Download</button>
+            </a>
+          </div>
+        `;
+      } catch (e) {
+        out.innerHTML = `<b>Error:</b> ${e.message}`;
+      }
+    };
+  </script>
+</body>
+</html>
