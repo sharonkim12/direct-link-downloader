@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Direct Link Downloader</title>
+  <title>Check File Before Download</title>
   <style>
     body { font-family: Arial, sans-serif; max-width: 860px; margin: 40px auto; padding: 0 16px; }
     h1 { font-size: 28px; margin-bottom: 10px; }
@@ -21,7 +21,7 @@
 </head>
 
 <body>
-  <h1>Direct Link Downloader</h1>
+  <h1>Check File Before Download</h1>
   <div class="muted">Paste a direct file URL (mp4, zip, pdf, etc.). YouTube is not supported.</div>
 
   <div class="box">
@@ -42,6 +42,30 @@
     const goBtn = document.getElementById("go");
     const urlInput = document.getElementById("url");
 
+    // 하루 팝 트리거 횟수 제한 (기본 3회)
+    const DAILY_POP_LIMIT = 3;
+
+    function getTodayKey() {
+      // 로컬타임 기준 날짜 키 (YYYY-MM-DD)
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `popCount_${yyyy}-${mm}-${dd}`;
+    }
+
+    function canTriggerPop() {
+      const key = getTodayKey();
+      const cnt = parseInt(localStorage.getItem(key) || "0", 10);
+      return cnt < DAILY_POP_LIMIT;
+    }
+
+    function incPopCount() {
+      const key = getTodayKey();
+      const cnt = parseInt(localStorage.getItem(key) || "0", 10);
+      localStorage.setItem(key, String(cnt + 1));
+    }
+
     function renderDownloadUI(data) {
       out.innerHTML = `
         <div><b>Looks downloadable.</b></div>
@@ -49,17 +73,28 @@
         <div style="margin-top:10px;">
           <button id="dlBtn">Download</button>
         </div>
+        <div class="muted" style="margin-top:8px;">
+          Tip: If a download link is fake, this tool helps you check type/size first.
+        </div>
       `;
 
       const btn = document.getElementById("dlBtn");
       btn.addEventListener("click", () => {
-        // 팝/인터스티셜 트리거 (네트워크 정책에 따라 동작이 달라질 수 있음)
-        window.open("about:blank", "_blank");
+        // 1) 하루 제한 내면: 광고 트리거 + 다운로드
+        if (canTriggerPop()) {
+          // 팝/인터스티셜 트리거 (사용자 클릭 기반)
+          window.open("about:blank", "_blank");
+          incPopCount();
 
-        // 실제 다운로드 이동
-        setTimeout(() => {
-          window.location.href = data.directUrl;
-        }, 800);
+          // 2) 실제 다운로드는 새 탭으로 (페이지 이탈 방지)
+          setTimeout(() => {
+            window.open(data.directUrl, "_blank", "noopener");
+          }, 800);
+          return;
+        }
+
+        // 3) 제한 초과 시: 광고 없이 다운로드만 새 탭
+        window.open(data.directUrl, "_blank", "noopener");
       });
     }
 
