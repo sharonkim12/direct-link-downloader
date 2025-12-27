@@ -4,73 +4,268 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Check File Before Download</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 860px; margin: 40px auto; padding: 0 16px; }
-    h1 { font-size: 28px; margin-bottom: 10px; }
-    input { width: 100%; padding: 12px; font-size: 16px; }
-    button { padding: 12px 16px; font-size: 16px; margin-top: 10px; cursor: pointer; }
-    .box { margin-top: 18px; padding: 14px; border: 1px solid #ddd; border-radius: 10px; }
-    .muted { color: #666; font-size: 13px; }
-    .ad-slot { margin-top: 18px; border: 1px solid #ddd; padding: 16px; border-radius: 10px; min-height: 90px; }
-    .ad-title { font-size: 12px; color: #777; margin-bottom: 8px; }
-    a { word-break: break-all; }
-    .pill { display:inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; border:1px solid #ddd; }
-    .ok { border-color:#b7e1c1; background:#f2fff5; }
-    .bad { border-color:#f3b1b1; background:#fff3f3; }
-  </style>
 
-  <!-- ✅ Monetag Onclick (Popunder) : head에 넣어도 되고 body 아래 넣어도 됨.
-       너는 헷갈리니까 "body 맨 아래"에만 넣을 거라 여기(head)엔 안 넣음 -->
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#0f1a2e;
+      --card2:#0c1527;
+      --text:#eaf0ff;
+      --muted:#a9b4d0;
+      --line:rgba(255,255,255,.10);
+      --good:#3ddc97;
+      --bad:#ff5b6e;
+      --warn:#ffd86b;
+      --btn:#3b82f6;
+      --btn2:#2563eb;
+      --shadow: 0 12px 40px rgba(0,0,0,.45);
+      --radius: 18px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(59,130,246,.28), transparent 60%),
+                  radial-gradient(900px 500px at 90% 20%, rgba(61,220,151,.18), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+
+    .wrap{max-width:980px; margin:0 auto; padding:32px 16px 44px;}
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; padding:10px 0 18px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      font-weight:700; letter-spacing:.2px;
+    }
+    .logo{
+      width:36px; height:36px; border-radius:12px;
+      background: linear-gradient(135deg, rgba(59,130,246,.95), rgba(61,220,151,.85));
+      box-shadow: 0 10px 30px rgba(59,130,246,.25);
+    }
+    .badge{
+      font-size:12px; color:var(--muted);
+      border:1px solid var(--line);
+      padding:6px 10px; border-radius:999px;
+      background: rgba(255,255,255,.03);
+      white-space:nowrap;
+    }
+
+    .hero{
+      display:grid; gap:16px;
+      grid-template-columns: 1.2fr .8fr;
+      margin-top:6px;
+    }
+    @media (max-width: 860px){
+      .hero{grid-template-columns:1fr}
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .card-inner{padding:18px 18px 16px;}
+
+    h1{
+      margin:0 0 8px;
+      font-size:28px;
+      line-height:1.15;
+    }
+    .sub{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.5;
+      margin:0;
+    }
+
+    .input-row{
+      margin-top:14px;
+      display:flex;
+      gap:10px;
+      align-items:stretch;
+    }
+    @media (max-width: 640px){
+      .input-row{flex-direction:column}
+    }
+    .field{
+      flex:1;
+      background: rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 12px;
+      color: var(--text);
+      font-size: 15px;
+      outline:none;
+    }
+    .field:focus{
+      border-color: rgba(59,130,246,.65);
+      box-shadow: 0 0 0 4px rgba(59,130,246,.18);
+    }
+    .btn{
+      border:0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight:700;
+      font-size: 15px;
+      cursor:pointer;
+      color:white;
+      background: linear-gradient(180deg, var(--btn), var(--btn2));
+      box-shadow: 0 10px 26px rgba(37,99,235,.25);
+      white-space:nowrap;
+    }
+    .btn:active{transform: translateY(1px)}
+    .hint{
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top:12px;
+      color:var(--muted);
+      font-size: 12px;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background:rgba(255,255,255,.35)}
+    .dot.good{background:rgba(61,220,151,.95)}
+    .dot.warn{background:rgba(255,216,107,.95)}
+    .dot.bad{background:rgba(255,91,110,.95)}
+
+    .side{
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    }
+    .side h2{
+      margin:0 0 10px;
+      font-size:14px;
+      letter-spacing:.4px;
+      text-transform:uppercase;
+      color: var(--muted);
+    }
+    .list{margin:0; padding:0; list-style:none; display:grid; gap:10px;}
+    .li{
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.18);
+      border-radius: 14px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .li b{font-weight:800}
+    .li span{color:var(--muted)}
+
+    .ad-card{
+      margin-top:14px;
+      background: rgba(0,0,0,.20);
+      border:1px dashed rgba(255,255,255,.18);
+      border-radius: 16px;
+      padding: 14px 14px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .footer{
+      margin-top:18px;
+      color: rgba(255,255,255,.45);
+      font-size: 12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .footer a{color: rgba(255,255,255,.65); text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+  </style>
 </head>
 
 <body>
-  <h1>Check File Before Download</h1>
-  <div class="muted">Paste a direct file URL (mp4, zip, pdf, etc.). YouTube is not supported.</div>
-
-  <div class="box">
-    <input id="urlInput" placeholder="https://example.com/file.mp4" />
-    <button id="analyzeBtn" type="button">Analyze</button>
-
-    <div id="hint" class="muted" style="margin-top:10px;">
-      Tip: Clicking Analyze will open a result page.
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>Check File Before Download</div>
+      </div>
+      <div class="badge">No downloads. No installs. Header check only.</div>
     </div>
-  </div>
 
-  <div class="ad-slot">
-    <div class="ad-title">Ads</div>
-    <div class="muted">
-      Ads may not show if you use an adblocker.
+    <div class="hero">
+      <!-- Main -->
+      <div class="card">
+        <div class="card-inner">
+          <h1>Spot fake download links before you click</h1>
+          <p class="sub">
+            Paste a URL. We check response headers (type/size) to tell whether it’s a real file or a web page pretending to be a download.
+          </p>
+
+          <div class="input-row">
+            <input id="urlInput" class="field" placeholder="https://example.com/file.zip" autocomplete="off" />
+            <button id="analyzeBtn" class="btn" type="button">Analyze</button>
+          </div>
+
+          <div class="hint">
+            <div class="pill"><span class="dot good"></span>Direct file: shows type & size</div>
+            <div class="pill"><span class="dot warn"></span>Redirect/HTML: likely fake button</div>
+            <div class="pill"><span class="dot bad"></span>Never enter passwords on download pages</div>
+          </div>
+
+          <div class="ad-card">
+            Ads may open a separate tab/popunder during navigation. If you use an adblocker, you may not see ads.
+          </div>
+
+          <div class="footer">
+            <div>Tip: This is <b>not</b> an antivirus. It helps you verify what a link actually returns.</div>
+            <div><a href="/analyze.html?url=https%3A%2F%2Fspeed.hetzner.de%2F100MB.bin">Try a sample test</a></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side -->
+      <div class="card side">
+        <div class="card-inner">
+          <h2>How to use</h2>
+          <ul class="list">
+            <li class="li"><b>1)</b> Paste the link you’re about to click.</li>
+            <li class="li"><b>2)</b> Click <b>Analyze</b>. You’ll be sent to the result page.</li>
+            <li class="li"><b>3)</b> If it returns <span>text/html</span>, it’s usually a fake download page.</li>
+            <li class="li"><b>4)</b> If it returns a file type + size, it’s likely a real file.</li>
+          </ul>
+
+          <div class="ad-card" style="margin-top:14px;">
+            Supported: mp4, zip, pdf, exe (direct links).<br />
+            Not supported: YouTube, most streaming pages.
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- ✅ 네 사이트 기능 스크립트 (그대로) -->
-  <script>
-    const input = document.getElementById("urlInput");
-    const btn = document.getElementById("analyzeBtn");
+    <!-- Your existing navigation logic -->
+    <script>
+      const input = document.getElementById("urlInput");
+      const btn = document.getElementById("analyzeBtn");
 
-    function goAnalyze() {
-      const url = input.value.trim();
-      if (!url) {
-        alert("Paste a URL first.");
-        return;
+      function goAnalyze() {
+        const url = input.value.trim();
+        if (!url) { alert("Paste a URL first."); return; }
+        window.location.href = "/analyze.html?url=" + encodeURIComponent(url);
       }
-      window.location.href = "/analyze.html?url=" + encodeURIComponent(url);
-    }
 
-    btn.addEventListener("click", goAnalyze);
+      btn.addEventListener("click", goAnalyze);
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") goAnalyze(); });
+    </script>
 
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") goAnalyze();
-    });
-  </script>
-
-  <!-- ✅ 여기!!! (</body> 바로 위) : Monetag Onclick(Popunder) 붙이는 자리 -->
-  <script>
-    (function (s) {
-      s.dataset.zone = '10382304';
-      s.src = 'https://al5sm.com/tag.min.js';
-    })([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')));
-  </script>
-
+    <!-- Monetag Onclick (Popunder) -->
+    <script>
+      (function (s) {
+        s.dataset.zone = '10382304';
+        s.src = 'https://al5sm.com/tag.min.js';
+      })([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')));
+    </script>
+  </div>
 </body>
 </html>
