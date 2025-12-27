@@ -11,9 +11,12 @@
     button { padding: 12px 16px; font-size: 16px; margin-top: 10px; cursor: pointer; }
     .box { margin-top: 18px; padding: 14px; border: 1px solid #ddd; border-radius: 10px; }
     .muted { color: #666; font-size: 13px; }
-    a { word-break: break-all; }
     .ad-slot { margin-top: 18px; border: 1px solid #ddd; padding: 16px; border-radius: 10px; min-height: 90px; }
     .ad-title { font-size: 12px; color: #777; margin-bottom: 8px; }
+    a { word-break: break-all; }
+    .pill { display:inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; border:1px solid #ddd; }
+    .ok { border-color:#b7e1c1; background:#f2fff5; }
+    .bad { border-color:#f3b1b1; background:#fff3f3; }
   </style>
 
   <!-- Vignette (pop/interstitial) -->
@@ -25,108 +28,40 @@
   <div class="muted">Paste a direct file URL (mp4, zip, pdf, etc.). YouTube is not supported.</div>
 
   <div class="box">
-    <input id="url" placeholder="https://example.com/file.mp4" />
-    <button id="go">Analyze</button>
-    <div id="out" style="margin-top:12px;"></div>
+    <input id="urlInput" placeholder="https://example.com/file.mp4" />
+    <button id="analyzeBtn" type="button">Analyze</button>
+
+    <div id="hint" class="muted" style="margin-top:10px;">
+      Tip: Clicking Analyze will open a result page. (This helps interstitial ads trigger on navigation.)
+    </div>
   </div>
 
   <div class="ad-slot">
     <div class="ad-title">Ads</div>
     <div class="muted">
-      Vignette/pop may not render a banner here. It usually triggers on clicks/navigation.
+      Interstitials usually trigger on clicks/navigation. If you use an adblocker, ads may not show.
     </div>
   </div>
 
   <script>
-    const out = document.getElementById("out");
-    const goBtn = document.getElementById("go");
-    const urlInput = document.getElementById("url");
+    const input = document.getElementById("urlInput");
+    const btn = document.getElementById("analyzeBtn");
 
-    // 하루 팝 트리거 횟수 제한 (기본 3회)
-    const DAILY_POP_LIMIT = 3;
-
-    function getTodayKey() {
-      // 로컬타임 기준 날짜 키 (YYYY-MM-DD)
-      const d = new Date();
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
-      return `popCount_${yyyy}-${mm}-${dd}`;
-    }
-
-    function canTriggerPop() {
-      const key = getTodayKey();
-      const cnt = parseInt(localStorage.getItem(key) || "0", 10);
-      return cnt < DAILY_POP_LIMIT;
-    }
-
-    function incPopCount() {
-      const key = getTodayKey();
-      const cnt = parseInt(localStorage.getItem(key) || "0", 10);
-      localStorage.setItem(key, String(cnt + 1));
-    }
-
-    function renderDownloadUI(data) {
-      out.innerHTML = `
-        <div><b>Looks downloadable.</b></div>
-        <div class="muted">Type: ${data.contentType || "unknown"} | Size: ${data.contentLength || "unknown"}</div>
-        <div style="margin-top:10px;">
-          <button id="dlBtn">Download</button>
-        </div>
-        <div class="muted" style="margin-top:8px;">
-          Tip: If a download link is fake, this tool helps you check type/size first.
-        </div>
-      `;
-
-      const btn = document.getElementById("dlBtn");
-      btn.addEventListener("click", () => {
-        // 1) 하루 제한 내면: 광고 트리거 + 다운로드
-        if (canTriggerPop()) {
-          // 팝/인터스티셜 트리거 (사용자 클릭 기반)
-          window.open("about:blank", "_blank");
-          incPopCount();
-
-          // 2) 실제 다운로드는 새 탭으로 (페이지 이탈 방지)
-          setTimeout(() => {
-            window.open(data.directUrl, "_blank", "noopener");
-          }, 800);
-          return;
-        }
-
-        // 3) 제한 초과 시: 광고 없이 다운로드만 새 탭
-        window.open(data.directUrl, "_blank", "noopener");
-      });
-    }
-
-    goBtn.addEventListener("click", async () => {
-      const url = urlInput.value.trim();
-      out.textContent = "";
-      if (!url) { out.textContent = "Enter a URL."; return; }
-
-      out.textContent = "Checking...";
-      try {
-        const r = await fetch("/api/check", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url })
-        });
-
-        const data = await r.json().catch(() => ({}));
-
-        if (!r.ok) {
-          out.innerHTML = `<b>Error:</b> ${data.error || "Unknown error"}`;
-          return;
-        }
-
-        if (!data.ok) {
-          out.innerHTML = `<b>Not downloadable:</b> ${data.reason || "Not allowed"}`;
-          return;
-        }
-
-        renderDownloadUI(data);
-      } catch (e) {
-        out.innerHTML = `<b>Error:</b> ${e.message}`;
+    function goAnalyze() {
+      const url = input.value.trim();
+      if (!url) {
+        alert("Paste a URL first.");
+        return;
       }
+      // ✅ 핵심: 페이지 이동을 발생시킴
+      window.location.href = "/analyze?url=" + encodeURIComponent(url);
+    }
+
+    btn.addEventListener("click", goAnalyze);
+
+    // Enter 키로도 실행
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") goAnalyze();
     });
   </script>
 </body>
