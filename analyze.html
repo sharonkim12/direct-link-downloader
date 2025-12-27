@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Analysis Result</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 860px; margin: 40px auto; padding: 0 16px; }
+    h1 { font-size: 24px; margin-bottom: 10px; }
+    .muted { color: #666; font-size: 13px; }
+    .box { margin-top: 18px; padding: 14px; border: 1px solid #ddd; border-radius: 10px; }
+    button { padding: 12px 16px; font-size: 16px; cursor: pointer; }
+    a { word-break: break-all; }
+  </style>
+
+  <!-- Vignette (pop/interstitial) -->
+  <script async src="https://gizokraijaw.net/vignette.min.js" data-zone="10360161"></script>
+</head>
+<body>
+  <h1>Analysis Result</h1>
+  <div class="muted">We check the URL headers to see if it's likely a real downloadable file.</div>
+
+  <div class="box">
+    <div><b>URL</b></div>
+    <div id="showUrl" class="muted" style="margin-top:6px;"></div>
+
+    <div id="out" style="margin-top:12px;">Checking...</div>
+
+    <div style="margin-top:14px;">
+      <a href="/">← Check another link</a>
+    </div>
+  </div>
+
+  <script>
+    const out = document.getElementById("out");
+    const showUrl = document.getElementById("showUrl");
+
+    function getParam(name) {
+      const u = new URL(window.location.href);
+      return u.searchParams.get(name) || "";
+    }
+
+    const url = getParam("url");
+    showUrl.textContent = url || "(empty)";
+
+    async function run() {
+      if (!url) {
+        out.innerHTML = "<b>Error:</b> No URL provided.";
+        return;
+      }
+
+      try {
+        const r = await fetch("/api/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url })
+        });
+
+        const data = await r.json().catch(() => ({}));
+
+        if (!r.ok) {
+          out.innerHTML = `<b>Error:</b> ${data.error || "Unknown error"}`;
+          return;
+        }
+
+        if (!data.ok) {
+          out.innerHTML = `
+            <div><b>Not downloadable</b></div>
+            <div class="muted" style="margin-top:6px;">${data.reason || "Not allowed"}</div>
+          `;
+          return;
+        }
+
+        out.innerHTML = `
+          <div><b>Looks downloadable.</b></div>
+          <div class="muted" style="margin-top:6px;">
+            Type: ${data.contentType || "unknown"} | Size: ${data.contentLength || "unknown"}
+          </div>
+          <div style="margin-top:12px;">
+            <button id="dlBtn" type="button">Open Download</button>
+          </div>
+          <div class="muted" style="margin-top:8px;">
+            Tip: If a download button is fake, this tool helps you verify type/size first.
+          </div>
+        `;
+
+        document.getElementById("dlBtn").addEventListener("click", () => {
+          // 광고 꼼수(about:blank) 같은 건 빼고, 그냥 정상적으로 열어라
+          window.open(data.directUrl, "_blank", "noopener");
+        });
+
+      } catch (e) {
+        out.innerHTML = `<b>Error:</b> ${e.message}`;
+      }
+    }
+
+    run();
+  </script>
+</body>
+</html>
