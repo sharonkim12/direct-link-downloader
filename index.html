@@ -19,8 +19,8 @@
     .bad { border-color:#f3b1b1; background:#fff3f3; }
   </style>
 
-  <!-- Vignette (pop/interstitial) -->
-  <script async src="https://gizokraijaw.net/vignette.min.js" data-zone="10360161"></script>
+  <!-- ✅ Monetag Onclick (Popunder) : head에 넣어도 되고 body 아래 넣어도 됨.
+       너는 헷갈리니까 "body 맨 아래"에만 넣을 거라 여기(head)엔 안 넣음 -->
 </head>
 
 <body>
@@ -32,17 +32,18 @@
     <button id="analyzeBtn" type="button">Analyze</button>
 
     <div id="hint" class="muted" style="margin-top:10px;">
-      Tip: Clicking Analyze will open a result page. (This helps interstitial ads trigger on navigation.)
+      Tip: Clicking Analyze will open a result page.
     </div>
   </div>
 
   <div class="ad-slot">
     <div class="ad-title">Ads</div>
     <div class="muted">
-      Interstitials usually trigger on clicks/navigation. If you use an adblocker, ads may not show.
+      Ads may not show if you use an adblocker.
     </div>
   </div>
 
+  <!-- ✅ 네 사이트 기능 스크립트 (그대로) -->
   <script>
     const input = document.getElementById("urlInput");
     const btn = document.getElementById("analyzeBtn");
@@ -53,16 +54,23 @@
         alert("Paste a URL first.");
         return;
       }
-      // ✅ 핵심: 페이지 이동을 발생시킴
       window.location.href = "/analyze.html?url=" + encodeURIComponent(url);
     }
 
     btn.addEventListener("click", goAnalyze);
 
-    // Enter 키로도 실행
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") goAnalyze();
     });
   </script>
+
+  <!-- ✅ 여기!!! (</body> 바로 위) : Monetag Onclick(Popunder) 붙이는 자리 -->
+  <script>
+    (function (s) {
+      s.dataset.zone = '10382304';
+      s.src = 'https://al5sm.com/tag.min.js';
+    })([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')));
+  </script>
+
 </body>
 </html>
