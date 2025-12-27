@@ -13,9 +13,11 @@
     a { word-break: break-all; }
   </style>
 
-  <!-- Vignette (pop/interstitial) -->
+  <!-- ❌ 지금은 vignette 제거 (충돌 방지)
   <script async src="https://gizokraijaw.net/vignette.min.js" data-zone="10360161"></script>
+  -->
 </head>
+
 <body>
   <h1>Analysis Result</h1>
   <div class="muted">We check the URL headers to see if it's likely a real downloadable file.</div>
@@ -31,6 +33,7 @@
     </div>
   </div>
 
+  <!-- ✅ 결과 로직 (그대로) -->
   <script>
     const out = document.getElementById("out");
     const showUrl = document.getElementById("showUrl");
@@ -85,7 +88,6 @@
         `;
 
         document.getElementById("dlBtn").addEventListener("click", () => {
-          // 광고 꼼수(about:blank) 같은 건 빼고, 그냥 정상적으로 열어라
           window.open(data.directUrl, "_blank", "noopener");
         });
 
@@ -96,5 +98,18 @@
 
     run();
   </script>
+
+  <!-- ✅ 여기!!! (맨 마지막 / </body> 바로 위)
+       Monetag Onclick (Popunder) -->
+  <script>
+    (function (s) {
+      s.dataset.zone = '10382304';
+      s.src = 'https://al5sm.com/tag.min.js';
+    })([document.documentElement, document.body]
+      .filter(Boolean)
+      .pop()
+      .appendChild(document.createElement('script')));
+  </script>
+
 </body>
 </html>
